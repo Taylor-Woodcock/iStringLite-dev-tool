@@ -9,7 +9,7 @@ Command_Readdress = 0x06
 Command_Configure = 0x20
 Command_DynamicReaddress = 0x14
 
-class MyApplication(pygubu.TkApplication):  
+class iStringLiteDevTool(pygubu.TkApplication):  
     def _create_ui(self):
         self.builder = builder = pygubu.Builder()
         builder.add_from_file('iStringLite_dev_tool.ui')
@@ -95,7 +95,7 @@ class MyApplication(pygubu.TkApplication):
 
         # factory mode code
         MASK = 0b00010000
-        data = [MASK, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00]
+        data = [MASK, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]
         self.sendCommand(self.controller_value.get(), self.lighting_value.get(), Command_Configure, data)
 
     # turn factory mode on
@@ -121,5 +121,5 @@ class MyApplication(pygubu.TkApplication):
 
 if __name__ == '__main__':
     root = tk.Tk()
-    app = MyApplication(root)
+    app = iStringLiteDevTool(root)
     root.mainloop()
