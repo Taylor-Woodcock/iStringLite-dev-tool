@@ -42,6 +42,10 @@ class iStringLiteDevTool(pygubu.TkApplication):
         if (lightingElementID < 0 or lightingElementID > 255):
             return
 
+        # return if command is invalid
+        #if (Array.IndexOf(VALID_COMMANDS, command) == -1):
+        #    return
+
         checksum = 0x00
 
         packetBuffer = bytearray(len(data) + 6) # create empty byte array
@@ -82,7 +86,7 @@ class iStringLiteDevTool(pygubu.TkApplication):
 
     # when the starting ID changes
     def on_starting_id_change(self, value):
-        starting_id_value.set(int(float(value)))
+        self.starting_id_value.set(int(float(value)))
 
     # turn factory mode on
     def on_factory_on_clicked(self):
