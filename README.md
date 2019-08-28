@@ -29,3 +29,8 @@ This was made to help readdress strings of LEDs. While attaching together two st
 | 0x24 | Command_WriteEffectBlock | No |
 | 0x25 | Command_KeepAlive | No |
 | 0x26 | Command_EffectTrigger | No |
+
+## Notes
+Its worth noting Python isn't my strong suit. That said, I felt Python would best suit this project to allow for cross platform support while on the field.
+
+This project uses tkinter and is intended to run on **Python 3** and above.
