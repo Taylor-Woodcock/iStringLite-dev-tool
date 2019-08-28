@@ -42,10 +42,6 @@ class iStringLiteDevTool(pygubu.TkApplication):
         if (lightingElementID < 0 or lightingElementID > 255):
             return
 
-        # return if command is invalid
-        #if (Array.IndexOf(VALID_COMMANDS, command) == -1):
-        #    return
-
         checksum = 0x00
 
         packetBuffer = bytearray(len(data) + 6) # create empty byte array
