@@ -3,11 +3,14 @@ from tkinter import messagebox
 import pygubu
 import socket
 import math
+import time
+import random
 
 # COMMANDS
 Command_Readdress = 0x06
 Command_Configure = 0x20
 Command_DynamicReaddress = 0x14
+Command_SetColour = 0x10
 
 class iStringLiteDevTool(pygubu.TkApplication):  
     def _create_ui(self):
@@ -29,6 +32,8 @@ class iStringLiteDevTool(pygubu.TkApplication):
         self.lighting_value = self.builder.tkvariables.__getitem__('lighting_id_value')
         self.factory_value = self.builder.tkvariables.__getitem__('factory_value')
         self.starting_id_value = self.builder.tkvariables.__getitem__('starting_id_value')
+        self.end_id_value = self.builder.tkvariables.__getitem__('end_id_value')
+
 
         self.hostname.set("169.254.1.1")
 
@@ -88,6 +93,10 @@ class iStringLiteDevTool(pygubu.TkApplication):
     def on_starting_id_change(self, value):
         self.starting_id_value.set(int(float(value)))
 
+    # when the starting ID changes
+    def on_end_id_change(self, value):
+        self.end_id_value.set(int(float(value)))
+
     # turn factory mode on
     def on_factory_on_clicked(self):
         print("Factory Mode: On")
@@ -95,8 +104,8 @@ class iStringLiteDevTool(pygubu.TkApplication):
 
         # factory mode code
         MASK = 0b00010000
-        data = [MASK, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]
-        self.sendCommand(self.controller_value.get(), self.lighting_value.get(), Command_Configure, data)
+        data = [0x10, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x5C]
+        self.sendCommand(self.controller_value.get(), 0, Command_Configure, data) # IMPORTANT NOTE: LE must be 0 for this to work!
 
     # turn factory mode on
     def on_factory_off_clicked(self):
@@ -105,8 +114,8 @@ class iStringLiteDevTool(pygubu.TkApplication):
 
         # factory mode code
         MASK = 0b00010000
-        data = [MASK, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
-        self.sendCommand(self.controller_value.get(), self.lighting_value.get(), Command_Configure, data)
+        data = [0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5C]
+        self.sendCommand(self.controller_value.get(), 0, Command_Configure, data) # IMPORTANT NOTE: LE must be 0 for this to work!
 
     def on_readdress_clicked(self):
         
@@ -114,10 +123,25 @@ class iStringLiteDevTool(pygubu.TkApplication):
             messagebox.showwarning("Warning", "You must turn factory mode on to use this command")
             return
 
-        print("Readdressing LEDs with an offset of", self.starting_id_value.get())
+        if(self.starting_id_value.get() > self.end_id_value.get()):
+            messagebox.showwarning("Warning", "The starting ID cannot be greater than the end ID")
+            return
+
+        print("Readdressing LEDs to", self.starting_id_value.get(), "-", self.end_id_value.get())
 
         # readdress code
-        self.sendCommand(self.controller_value.get(), self.lighting_value.get(), Command_DynamicReaddress, [self.starting_id_value.get()])
+        self.sendCommand(self.controller_value.get(), self.lighting_value.get(), Command_Readdress, list(range(self.starting_id_value.get(), self.end_id_value.get() + 1)))
+
+    def on_readdress_test_clicked(self):
+        button_text = self.builder.tkvariables.__getitem__('readdress_test_text')
+        tests = 5
+        for x in range(5):
+            button_text.set(tests)
+            print("Testing LED", self.starting_id_value.get() + x, "controller", self.controller_value.get())
+            self.sendCommand(self.controller_value.get(), self.starting_id_value.get() + x, Command_SetColour, [random.randint(1, 255), random.randint(1, 255), random.randint(1, 255)])
+            time.sleep(1)
+
+        button_text.set("Test")
 
 if __name__ == '__main__':
     root = tk.Tk()
