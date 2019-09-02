@@ -42,8 +42,15 @@ class iStringLiteDevTool(pygubu.TkApplication):
 
         self.hostname.set("169.254.1.1")
 
-    # used for sending commands to the iStringLite devices
     def sendCommand(self, controlElementID: int, lightingElementID: int, command: int, data: bytes):
+        """Formats and send UDP packets to the iSLAP protocol specification.
+
+        Arguments:
+            controlElementID {int} -- The ID of the controller the packet is intended for (255 = broadcast)
+            lightingElementID {int} -- The ID of the lighting element the packet is intended for (255 = broadcast)
+            command {int} -- The ID of the command being sent
+            data {bytes} -- The payload of the packet being sent
+        """
         # return if controller ID is invalid
         if (controlElementID < 0 or controlElementID > 255):
             return
@@ -82,24 +89,41 @@ class iStringLiteDevTool(pygubu.TkApplication):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.sendto(packetBuffer, (self.hostname.get(), self.port.get()))
 
-    # when the controller ID changes
     def on_controller_id_change(self, value):
+        """Updates the controller ID value spinbox when the scroll bar is updated
+
+        Arguments:
+            value {[float]} -- The value of the controller ID scrollbar
+        """
         self.controller_value.set(int(float(value)))
 
-    # when the lighting ID changes
     def on_lighting_id_change(self, value):
+        """Updates the lighting ID value spinbox when the scroll bar is updated
+
+        Arguments:
+            value {[float]} -- The value of the lighting ID scrollbar
+        """
         self.lighting_value.set(int(float(value)))
 
-    # when the starting ID changes
     def on_starting_id_change(self, value):
+        """Updates the starting ID value spinbox when the scroll bar is updated
+
+        Arguments:
+            value {[float]} -- The value of the starting ID scrollbar
+        """
         self.starting_id_value.set(int(float(value)))
 
-    # when the starting ID changes
     def on_end_id_change(self, value):
+        """Updates the starting ID value spinbox when the scroll bar is updated
+
+        Arguments:
+            value {[float]} -- The value of the starting ID scrollbar
+        """
         self.end_id_value.set(int(float(value)))
 
-    # turn factory mode on
     def on_factory_on_clicked(self):
+        """Generates the payload for enabling Factory Mode
+        """
         print("Factory Mode: On")
         self.factory_value.set("On")
 
@@ -112,6 +136,8 @@ class iStringLiteDevTool(pygubu.TkApplication):
 
     # turn factory mode on
     def on_factory_off_clicked(self):
+        """Generates the payload for enabling Normal Operation Mode
+        """
         print("Factory Mode: Off")
         self.factory_value.set("Off")
 
@@ -123,12 +149,16 @@ class iStringLiteDevTool(pygubu.TkApplication):
                          0, Command_Configure, data)
 
     def on_readdress_clicked(self):
-
+        """Generates the payload for readdressing lighting elements.
+           Note: Factory Mode must be enabled to readdress LEDs
+        """
+        # protect against trying to readdress without Factory Mode enabled
         if(self.factory_value.get() == "Off"):
             messagebox.showwarning(
                 "Warning", "You must turn factory mode on to use this command")
             return
 
+        # protect against trying to readdress LEDs in  opposing order
         if(self.starting_id_value.get() > self.end_id_value.get()):
             messagebox.showwarning(
                 "Warning", "The starting ID cannot be greater than the end ID")
@@ -137,23 +167,34 @@ class iStringLiteDevTool(pygubu.TkApplication):
         print("Readdressing LEDs to", self.starting_id_value.get(),
               "-", self.end_id_value.get())
 
-        # readdress code
+        # send readdress packet with payload range
         self.sendCommand(self.controller_value.get(), self.lighting_value.get(
         ), Command_Readdress, list(range(self.starting_id_value.get(), self.end_id_value.get() + 1)))
 
     def on_readdress_test_clicked(self):
+        """Used for testing if the readdress packet was received successfully
+           by testing five LEDs starting at the new ID
+        """
         button_text = self.builder.tkvariables.__getitem__(
             'readdress_test_text')
-        tests = 5
+
+        # send a random colour change command to the first five LEDs starting at the new ID
+        testNumber = 5
         for x in range(5):
-            button_text.set(tests)
+            # set button to the current test number
+            # TODO: Currently doesn'tupdate due to time.sleep(). after() would fix this
+            button_text.set(testNumber)
+
             print("Testing LED", self.starting_id_value.get() +
                   x, "controller", self.controller_value.get())
+
+            # send a SetColour command with random RGB value
             self.sendCommand(self.controller_value.get(), self.starting_id_value.get(
             ) + x, Command_SetColour, [random.randint(1, 255), random.randint(1, 255), random.randint(1, 255)])
+
             time.sleep(1)
 
-        button_text.set("Test")
+        button_text.set("Test")  # reset button text
 
 
 if __name__ == '__main__':
